@@ -1,0 +1,220 @@
+<html>
+
+<head>
+    <title>aframe game of life cube</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script>
+
+        AFRAME.registerComponent('game-of-life-cube', {
+
+            schema: {
+                interval: { type: 'number', default: 100 },
+                grid: { type: 'array', default: [] },
+                glider: { type: 'boolean', default: false }
+            },
+
+            deepCopy: function deepCopy(arr) {
+                return arr.map(subArr => Array.isArray(subArr) ? this.deepCopy(subArr) : subArr);
+            },
+
+            clearGrid: function () {
+
+                const grid = Array.from(
+                        Array(this.xLength),
+                        () => Array.from(
+                            Array(this.yLength),
+                            () => Array.from(
+                            Array(this.zLength),
+                            () => 0
+                            )
+                        )
+                    );
+
+                // readable alternative:
+                // const grid = Array(this.zLength).fill(0).map(() => {
+                //     return Array(this.xLength).fill(0).map(() => {
+                //         return Array(this.yLength).fill(0);
+                //      });
+                // });
+
+                return grid;
+            },
+
+            init: function () {
+
+                this.cols = { low: -5, high: 6 };
+                this.rows = { low: -5, high: 6 };
+                this.planes = { low: -1, high: 1 };
+
+                this.xLength = this.cols.high - this.cols.low;
+                this.yLength = this.rows.high - this.rows.low;
+                this.zLength = this.planes.high - this.planes.low;
+
+                this.elapsedTime = 0;
+
+                this.stepSeconds = 1;
+                this.degreesPerSecond = 45;
+
+                let start = undefined;  // TODO - get from attributes
+                let aliveChance = 0.2;
+
+                if (this.data.glider) {
+
+                    this.data.grid = this.deepCopy(this.clearGrid());
+
+                    // Initialize a glider pattern
+                    // TODO - make a 3D version
+                    const glider = [
+                        [0, 1, 0],
+                        [0, 0, 1],
+                        [1, 1, 1]
+                    ];
+
+                    const offsetX = (x - glider.length) / 2;
+                    const offsetY = (y - glider[0].length) / 2;
+
+                    for (let i = 0; i < glider.length; i++) {
+                        for (let j = 0; j < glider[i].length; j++) {
+                            this.data.grid[offsetX + i][offsetY + j][0] = glider[i][j];
+                        }
+                    }
+
+                } else {
+                    this.data.grid = start ? start : Array.from(
+                        Array(this.xLength),
+                        () => Array.from(
+                            Array(this.yLength),
+                            () => Array.from(
+                                Array(this.zLength),
+                                () => Math.random() < aliveChance ? 1 : 0
+                            )
+                        )
+                    );
+                }
+
+                this.draw()
+            },
+
+            tick: function (time, timeDelta) {
+                var rotation = this.el.getAttribute('rotation');
+                rotation.y += this.degreesPerSecond * (timeDelta / 1000);
+                this.el.setAttribute('rotation', rotation);
+
+                // this.elapsedTime += timeDelta;
+                // if (this.elapsedTime >= this.data.interval) {
+                //     this.data.grid = this.deepCopy(this.step(this.data.grid));
+                //     this.elapsedTime -= this.data.interval; // reset the timer
+                //     this.draw()
+                // }
+            },
+            draw: function () {
+                var el = this.el;
+
+                while (el.firstChild) {
+                    // remove previous children
+                    el.removeChild(el.firstChild);
+                }
+
+                for (let c = this.cols.low, ix = 0; c < this.cols.high; c++, ix++) {
+                    for (let r = this.rows.low, iy = 0; r < this.rows.high; r++, iy++) {
+                        for (let p = this.planes.low, iz = 0; p < this.planes.high; p++, iz++) {
+                            if (this.data.grid[ix][iy][iz]) {
+                                const obj = document.createElement("a-entity");
+                                obj.setAttribute('mixin', 'tile');
+                                obj.setAttribute("position", `${c} ${r} ${p}`);
+                                obj.setAttribute('material', 'color', '#39ff14')
+                                el.appendChild(obj);
+                            }
+                        }
+                    }
+                }
+            },
+
+            step: function (grid) {
+
+                const cols = this.xLength;
+                const rows = this.yLength;
+                const planes = this.zLength
+
+                function countNeighbors(i, j, k) {
+
+                    let count = 0;
+
+                    for (let x = -1; x <= 1; x++) {
+                        for (let y = -1; y <= 1; y++) {
+                            for (let z = -1; z <= 1; y++) {
+
+                                const col = (i + y + cols) % cols; // wrap around cols
+                                const row = (j + x + rows) % rows; // wrap around rows
+                                const plane = (k + z + planes) % planes; // wrap around rows
+
+                                if (x === 0 && y === 0 && z == 0 ) {
+                                    continue; // skip the current cell
+                                }
+
+                                if (grid[col][row][plane] === 1) {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+
+                    return count;
+                }
+
+                // const newGrid = Array.from({ length: rows }, () => Array(cols).fill(0));
+                const newGrid = this.deepCopy(this.clearGrid());
+
+                for (let i = 0; i < this.xLength; i++) {
+                    for (let j = 0; j < this.yLength; j++) {
+                        for (let k = 0; k < this.zLength; k++) {
+                            const cell = grid[i][j][k];
+                            const neighbors = countNeighbors(i, j, k);
+
+                            if (cell === 1 && (neighbors < 2 || neighbors > 3)) {
+                                newGrid[i][j][k] = 0; // underpopulation or overpopulation
+                            } else if (cell === 0 && neighbors === 3) {
+                                newGrid[i][j][k] = 1; // reproduction
+                            } else {
+                                newGrid[i][j][k] = cell; // no change
+                            }
+                        }
+                    }
+                }
+
+                this.draw();
+
+                return newGrid;
+            }
+        });
+
+    </script>
+</head>
+
+<body>
+    <a-scene>
+        <a-assets>
+            <a-mixin id="tile" geometry="primitive: box; width: 0.5; height: 0.5; depth: 0.5"></a-mixin>
+            <a-mixin id="ball" geometry="primitive: sphere; radius: 0.2;"></a-mixin>
+            <a-mixin id="fader"
+                animation__fade="property: material.opacity; from:1; to:0; dur:2000; loop:false; easing:linear;"></a-mixin>
+            <a-mixin id="shrinker"
+                animation__shrinker="property: scale; from:1 1 1; to:0 0 0; dur:5000; loop:false; easing:linear;"></a-mixin>
+        </a-assets>
+        <a-entity id="rig" position="0 1.6 10">
+            <a-entity id="camera" camera look-controls>
+                <!-- <a-cursor></a-cursor> -->
+            </a-entity>
+        </a-entity>
+        <a-entity id="game1" position="0 1.6 -10" game-of-life-cube></a-entity>
+        <!--
+            <a-entity id="game2" position="10 1.6 -10" game-of-life-cube="glider: true;"></a-entity>
+            <a-entity id="game3" position="-10 1.6 -10" game-of-life-cube></a-entity>
+        -->
+  
+        <a-sky color="#333333"></a-sky>
+    </a-scene>
+
+</body>
+
+</html>
