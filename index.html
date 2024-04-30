@@ -42,9 +42,9 @@
 
             init: function () {
 
-                this.cols = { low: -4, high: 4 };
-                this.rows = { low: -4, high: 4 };
-                this.planes = { low: -4, high: 4 };
+                this.cols = { low: -6, high: 7 };
+                this.rows = { low: -6, high: 7 };
+                this.planes = { low: -6, high: 7 };
 
                 this.xLength = this.cols.high - this.cols.low;
                 this.yLength = this.rows.high - this.rows.low;
@@ -63,19 +63,23 @@
                     this.data.grid = this.deepCopy(this.clearGrid());
 
                     // Initialize a glider pattern
-                    // TODO - make a 3D version
+                    // Works for 5766 - needs a lot of work
                     const glider = [
                         [0, 1, 0],
                         [0, 0, 1],
                         [1, 1, 1]
                     ];
 
-                    const offsetX = (x - glider.length) / 2;
-                    const offsetY = (y - glider[0].length) / 2;
+                    // const offsetX = (this.xLength) / 2;
+                    // const offsetY = (this.yLength) / 2;
+                    const offsetX = 0;
+                    const offsetY = 0;
 
-                    for (let i = 0; i < glider.length; i++) {
-                        for (let j = 0; j < glider[i].length; j++) {
-                            this.data.grid[offsetX + i][offsetY + j][0] = glider[i][j];
+                    for (let plane = 0; plane <= 1; plane++ ) {
+                        for (let i = 0; i < glider.length; i++) {
+                            for (let j = 0; j < glider[i].length; j++) {
+                                this.data.grid[offsetX + i][offsetY + j][plane] = glider[i][j];
+                            }
                         }
                     }
 
@@ -97,9 +101,9 @@
 
             tick: function (time, timeDelta) {
                 var rotation = this.el.getAttribute('rotation');
-                rotation.x += this.degreesPerSecond * (timeDelta / 3000);
+                // rotation.x += this.degreesPerSecond * (timeDelta / 3000);
                 rotation.y += this.degreesPerSecond * (timeDelta / 1000);
-                rotation.z += this.degreesPerSecond * (timeDelta / 2000);
+                // rotation.z += this.degreesPerSecond * (timeDelta / 2000);
                 this.el.setAttribute('rotation', rotation);
 
                 this.elapsedTime += timeDelta;
@@ -148,7 +152,7 @@
 
                                 const col = (i + y + cols) % cols; // wrap around cols
                                 const row = (j + x + rows) % rows; // wrap around rows
-                                const plane = (k + z + planes) % planes; // wrap around rows
+                                const plane = (k + z + planes) % planes; // wrap around planes
 
                                 if (x === 0 && y === 0 && z == 0 ) {
                                     continue; // skip the current cell
@@ -173,7 +177,7 @@
                             const cell = grid[i][j][k];
                             const neighbors = countNeighbors(i, j, k);
 
-                            // 2D
+                            // 2D - 2333
                             // if (cell === 1 && (neighbors < 2 || neighbors > 3)) {
                             //     newGrid[i][j][k] = 0; // underpopulation or overpopulation
                             // } else if (cell === 0 && neighbors === 3) {
@@ -182,21 +186,41 @@
                             //     newGrid[i][j][k] = cell; // no change
                             // }
 
-                            // 3D
-                            if (cell === 1 && (neighbors === 5 || neighbors === 6)) {
-                                // Live cell with 5-6 live neighbors survives.
-                                // Survives, no change
-                                newGrid[i][j][k] = cell; // no change
-                            } else if (cell === 1 ) {
-                                // live cells die
+
+                            // // 4555
+                            // if (cell === 1 && (neighbors < 4 || neighbors > 5)) {
+                            //     newGrid[i][j][k] = 0; // underpopulation or overpopulation
+                            // } else if (cell === 0 && neighbors === 5) {
+                            //     newGrid[i][j][k] = 1; // reproduction
+                            // } else {
+                            //     newGrid[i][j][k] = cell; // no change
+                            // }
+
+                            // 5766
+                            if (cell === 1 && (neighbors < 5 || neighbors > 7)) {
                                 newGrid[i][j][k] = 0; // underpopulation or overpopulation
-                            } else if ( cell === 0 && neighbors === 4 ) {
-                                // Any dead cell with 4 live neighbors becomes a live cell.
+                            } else if (cell === 0 && neighbors === 6) {
                                 newGrid[i][j][k] = 1; // reproduction
                             } else {
-                                // dead cells stay dead
                                 newGrid[i][j][k] = cell; // no change
                             }
+
+        
+                            // 3D ALT - needs work
+                            // if (cell === 1 && (neighbors === 5 || neighbors === 6)) {
+                            //     // Live cell with 5-6 live neighbors survives.
+                            //     // Survives, no change
+                            //     newGrid[i][j][k] = cell; // no change
+                            // } else if (cell === 1 ) {
+                            //     // live cells die
+                            //     newGrid[i][j][k] = 0; // underpopulation or overpopulation
+                            // } else if ( cell === 0 && neighbors === 4 ) {
+                            //     // Any dead cell with 4 live neighbors becomes a live cell.
+                            //     newGrid[i][j][k] = 1; // reproduction
+                            // } else {
+                            //     // dead cells stay dead
+                            //     newGrid[i][j][k] = cell; // no change
+                            // }
       
 
                             
@@ -223,14 +247,14 @@
             <a-mixin id="shrinker"
                 animation__shrinker="property: scale; from:1 1 1; to:0 0 0; dur:5000; loop:false; easing:linear;"></a-mixin>
         </a-assets>
-        <a-entity id="rig" position="0 1.6 3">
+        <a-entity id="rig" position="0 1.6 7">
             <a-entity id="camera" camera look-controls>
                 <!-- <a-cursor></a-cursor> -->
             </a-entity>
         </a-entity>
-        <a-entity id="game1" position="0 1.6 -10" game-of-life-cube></a-entity>
+        <a-entity id="game1" position="0 1.6 -10" game-of-life-cube="glider: true;"></a-entity>
+        <a-entity id="game2" position="10 1.6 -10" game-of-life-cube></a-entity>
         <!--
-            <a-entity id="game2" position="10 1.6 -10" game-of-life-cube="glider: true;"></a-entity>
             <a-entity id="game3" position="-10 1.6 -10" game-of-life-cube></a-entity>
         -->
   
