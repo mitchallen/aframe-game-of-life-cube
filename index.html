@@ -186,12 +186,13 @@
                             if (cell === 1 && (neighbors === 5 || neighbors === 6)) {
                                 // Live cell with 5-6 live neighbors survives.
                                 // Survives, no change
-                            } else if ( cell === 0 && neighbors === 4 ) {
-                                // Any dead cell with 4 live neighbors becomes a live cell.
-                                newGrid[i][j][k] = 1; // reproduction
+                                newGrid[i][j][k] = cell; // no change
                             } else if (cell === 1 ) {
                                 // live cells die
                                 newGrid[i][j][k] = 0; // underpopulation or overpopulation
+                            } else if ( cell === 0 && neighbors === 4 ) {
+                                // Any dead cell with 4 live neighbors becomes a live cell.
+                                newGrid[i][j][k] = 1; // reproduction
                             } else {
                                 // dead cells stay dead
                                 newGrid[i][j][k] = cell; // no change
