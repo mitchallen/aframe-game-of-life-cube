@@ -42,9 +42,9 @@
 
             init: function () {
 
-                this.cols = { low: -5, high: 6 };
-                this.rows = { low: -5, high: 6 };
-                this.planes = { low: -1, high: 1 };
+                this.cols = { low: -6, high: 6 };
+                this.rows = { low: -6, high: 6 };
+                this.planes = { low: -6, high: 6 };
 
                 this.xLength = this.cols.high - this.cols.low;
                 this.yLength = this.rows.high - this.rows.low;
@@ -97,12 +97,14 @@
 
             tick: function (time, timeDelta) {
                 var rotation = this.el.getAttribute('rotation');
+                rotation.x += this.degreesPerSecond * (timeDelta / 3000);
                 rotation.y += this.degreesPerSecond * (timeDelta / 1000);
+                rotation.z += this.degreesPerSecond * (timeDelta / 2000);
                 this.el.setAttribute('rotation', rotation);
 
                 this.elapsedTime += timeDelta;
                 if (this.elapsedTime >= this.data.interval) {
-                    // this.data.grid = this.deepCopy(this.step(this.data.grid));
+                    this.data.grid = this.deepCopy(this.step(this.data.grid));
                     this.elapsedTime -= this.data.interval; // reset the timer
                     this.draw()
                 }
@@ -134,7 +136,7 @@
 
                 const cols = this.xLength;
                 const rows = this.yLength;
-                const planes = this.zLength
+                const planes = this.zLength;
 
                 function countNeighbors(i, j, k) {
 
@@ -142,7 +144,7 @@
 
                     for (let x = -1; x <= 1; x++) {
                         for (let y = -1; y <= 1; y++) {
-                            for (let z = -1; z <= 1; y++) {
+                            for (let z = -1; z <= 1; z++) {
 
                                 const col = (i + y + cols) % cols; // wrap around cols
                                 const row = (j + x + rows) % rows; // wrap around rows
@@ -171,13 +173,32 @@
                             const cell = grid[i][j][k];
                             const neighbors = countNeighbors(i, j, k);
 
-                            if (cell === 1 && (neighbors < 2 || neighbors > 3)) {
-                                newGrid[i][j][k] = 0; // underpopulation or overpopulation
-                            } else if (cell === 0 && neighbors === 3) {
+                            // 2D
+                            // if (cell === 1 && (neighbors < 2 || neighbors > 3)) {
+                            //     newGrid[i][j][k] = 0; // underpopulation or overpopulation
+                            // } else if (cell === 0 && neighbors === 3) {
+                            //     newGrid[i][j][k] = 1; // reproduction
+                            // } else {
+                            //     newGrid[i][j][k] = cell; // no change
+                            // }
+
+                            // 3D
+                            if (cell === 1 && (neighbors === 5 || neighbors === 6)) {
+                                // Live cell with 5-6 live neighbors survives.
+                                // Survives, no change
+                            } else if ( cell === 0 && neighbors === 4 ) {
+                                // Any dead cell with 4 live neighbors becomes a live cell.
                                 newGrid[i][j][k] = 1; // reproduction
+                            } else if (cell === 1 ) {
+                                // live cells die
+                                newGrid[i][j][k] = 0; // underpopulation or overpopulation
                             } else {
+                                // dead cells stay dead
                                 newGrid[i][j][k] = cell; // no change
                             }
+      
+
+                            
                         }
                     }
                 }
