@@ -100,12 +100,12 @@
                 rotation.y += this.degreesPerSecond * (timeDelta / 1000);
                 this.el.setAttribute('rotation', rotation);
 
-                // this.elapsedTime += timeDelta;
-                // if (this.elapsedTime >= this.data.interval) {
-                //     this.data.grid = this.deepCopy(this.step(this.data.grid));
-                //     this.elapsedTime -= this.data.interval; // reset the timer
-                //     this.draw()
-                // }
+                this.elapsedTime += timeDelta;
+                if (this.elapsedTime >= this.data.interval) {
+                    // this.data.grid = this.deepCopy(this.step(this.data.grid));
+                    this.elapsedTime -= this.data.interval; // reset the timer
+                    this.draw()
+                }
             },
             draw: function () {
                 var el = this.el;
